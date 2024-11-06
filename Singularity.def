@@ -1,0 +1,8 @@
+BootStrap: docker
+From: ubuntu:20.04
+
+%post
+    apt-get update && apt-get install -y \
+        python3-pip python3-dev \
+        libopencv-dev \
+        && pip3 install opencv-python-headless

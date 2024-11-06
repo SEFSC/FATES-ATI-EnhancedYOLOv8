@@ -1,0 +1,231 @@
+import numpy as np
+import torch
+import cv2
+from ultralytics import YOLO, solutions
+
+# Load model
+# Initialize the YOLO model
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+model = YOLO('/work/cshah/updatedYOLOv8/ultralytics/runs/detect/train176/weights/best.pt')
+model.model.to(device)
+
+# Open video file
+#cap = cv2.VideoCapture("/work/cshah/unseen_videos_jackonedrive/2022 Pisces Video/762201029_cam3.avi") 762201030_cam1
+#cap = cv2.VideoCapture("/work/cshah/unseen_videos_jackonedrive/2022 Pisces Video/762201030_cam1.avi")
+#cap = cv2.VideoCapture("/work/cshah/unseen_videos_jackonedrive/2022 Pisces Video/762201405_cam3.avi")
+#cap = cv2.VideoCapture("/work/cshah/unseen_videos_jackonedrive/2022 Pisces Video/762201373_cam2.avi")
+cap = cv2.VideoCapture("/work/cshah/unseen_videos_jackonedrive/2022 Pisces Video/762201004_cam3.avi")
+
+assert cap.isOpened(), "Error reading video file"
+
+# Get video properties
+w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
+
+## Define line or region points and classes to count
+#line_points = [(20, 400), (1080, 400)]  # Line or region points
+line_points = [(960, 100), (960, 1100)] #Vertical lines, height :1200, width:1920
+## Define region points
+#region_points = [(20, 400), (1080, 404), (1080, 360), (20, 360)]
+
+classes_to_count = list(range(141))  # Count all classes
+
+# Class names dictionary
+classes_names = {
+    0: "ACANTHURUS-170160100",
+    1: "ACANTHURUSCOERULEUS-170160102",
+    2: "ALECTISCILIARIS-170110101",
+    3: "ANISOTREMUSVIRGINICUS-170190105",
+    4: "ANOMURA-999100401",
+    5: "ARCHOSARGUSPROBATOCEPHALUS-170213601",
+    6: "BALISTESCAPRISCUS-189030502",
+    7: "BALISTESVETULA-189030504",
+    8: "BODIANUSPULCHELLUS-170280201",
+    9: "BODIANUSRUFUS-170280202",
+    10: "CALAMUS-170210600",
+    11: "CALAMUSBAJONADO-170210602",
+    12: "CALAMUSLEUCOSTEUS-170210604",
+    13: "CALAMUSNODOSUS-170210608",
+    14: "CALAMUSPRORIDENS-170210605",
+    15: "CALLIONYMIDAE-170420000",
+    16: "CANTHIDERMISSUFFLAMEN-189030402",
+    17: "CANTHIGASTERROSTRATA-189080101",
+    18: "CARANGIDAE-170110000",
+    19: "CARANXBARTHOLOMAEI-170110801",
+    20: "CARANXCRYSOS-170110803",
+    21: "CARANXRUBER-170110807",
+    22: "CARCHARHINUS-108020200",
+    23: "CARCHARHINUSFALCIFORMIS-108020202",
+    24: "CARCHARHINUSPEREZI-108020211",
+    25: "CARCHARHINUSPLUMBEUS-108020208",
+    26: "CAULOLATILUSCHRYSOPS-170070104",
+    27: "CAULOLATILUSCYANOPS-170070101",
+    28: "CAULOLATILUSMICROPS-170070103",
+    29: "CENTROPRISTISOCYURUS-170024804",
+    30: "CENTROPRISTISPHILADELPHICA-170024805",
+    31: "CEPHALOPHOLISCRUENTATA-170020401",
+    32: "CEPHALOPHOLISFULVA-170020403",
+    33: "CHAETODON-170260300",
+    34: "CHAETODONCAPISTRATUS-170260302",
+    35: "CHAETODONOCELLATUS-170260307",
+    36: "CHAETODONSEDENTARIUS-170260309",
+    37: "CHROMIS-170270300",
+    38: "CHROMISENCHRYSURUS-170270302",
+    39: "CHROMISINSOLATUS-170270304",
+    40: "DECAPTERUS-170111200",
+    41: "DERMATOLEPISINERMIS-170020301",
+    42: "DIODONTIDAE-189090000",
+    43: "DIPLECTRUM-170020900",
+    44: "DIPLECTRUMFORMOSUM-170020903",
+    45: "EPINEPHELUS-170021200",
+    46: "EPINEPHELUSADSCENSIONIS-170021203",
+    47: "EPINEPHELUSMORIO-170021211",
+    48: "EQUETUSLANCEOLATUS-170201104",
+    49: "GOBIIDAE-170550000",
+    50: "GONIOPLECTRUSHISPANUS-170021403",
+    51: "GYMNOTHORAXMORINGA-143060202",
+    52: "GYMNOTHORAXSAXICOLA-143060205",
+    53: "HAEMULONALBUM-170191002",
+    54: "HAEMULONAUROLINEATUM-170191003",
+    55: "HAEMULONFLAVOLINEATUM-170191005",
+    56: "HAEMULONMACROSTOMUM-170191017",
+    57: "HAEMULONMELANURUM-170191007",
+    58: "HAEMULONPLUMIERI-170191008",
+    59: "HALICHOERES-170281200",
+    60: "HALICHOERESBATHYPHILUS-170281201",
+    61: "HALICHOERESBIVITTATUS-170281202",
+    62: "HALICHOERESGARNOTI-170281205",
+    63: "HOLACANTHUS-170290100",
+    64: "HOLACANTHUSBERMUDENSIS-170290102",
+    65: "HOLOCENTRUS-161110200",
+    66: "HOLOCENTRUSADSCENSIONIS-161110201",
+    67: "HYPOPLECTRUS-170021500",
+    68: "HYPOPLECTRUSGEMMA-170021503",
+    69: "HYPOPLECTRUSUNICOLOR-170021501",
+    70: "HYPORTHODUSFLAVOLIMBATUS-170021206",
+    71: "HYPORTHODUSNIGRITUS-170021202",
+    72: "IOGLOSSUS-170550800",
+    73: "KYPHOSUS-170240300",
+    74: "LACHNOLAIMUSMAXIMUS-170281801",
+    75: "LACTOPHRYSTRIGONUS-189070205",
+    76: "LIOPROPOMAEUKRINES-170025602",
+    77: "LUTJANUS-170151100",
+    78: "LUTJANUSANALIS-170151101",
+    79: "LUTJANUSAPODUS-170151102",
+    80: "LUTJANUSBUCCANELLA-170151106",
+    81: "LUTJANUSCAMPECHANUS-170151107",
+    82: "LUTJANUSGRISEUS-170151109",
+    83: "LUTJANUSSYNAGRIS-170151113",
+    84: "LUTJANUSVIVANUS-170151114",
+    85: "MALACANTHUSPLUMIERI-170070301",
+    86: "MULLOIDICHTHYSMARTINICUS-170220101",
+    87: "MURAENARETIFERA-143060402",
+    88: "MYCTEROPERCA-170022100",
+    89: "MYCTEROPERCABONACI-170022101",
+    90: "MYCTEROPERCAINTERSTITIALIS-170022103",
+    91: "MYCTEROPERCAMICROLEPIS-170022104",
+    92: "MYCTEROPERCAPHENAX-170022105",
+    93: "OCYURUSCHRYSURUS-170151501",
+    94: "OPHICHTHUSPUNCTICEPS-143150402",
+    95: "OPISTOGNATHUS-170310200",
+    96: "OPISTOGNATHUSAURIFRONS-170310203",
+    97: "PAGRUSPAGRUS-170212302",
+    98: "PARANTHIASFURCIFER-170022701",
+    99: "PAREQUESUMBROSUS-170201105",
+    100: "POMACANTHUS-170290200",
+    101: "POMACANTHUSARCUATUS-170290201",
+    102: "POMACANTHUSPARU-170290203",
+    103: "POMACENTRIDAE-170270000",
+    104: "POMACENTRUS-170270500",
+    105: "POMACENTRUSPARTITUS-170270502",
+    106: "PRIACANTHUSARENATUS-170050101",
+    107: "PRISTIGENYSALTA-170050401",
+    108: "PRISTIPOMOIDES-170151800",
+    109: "PROGNATHODESACULEATUS-170260305",
+    110: "PROGNATHODESAYA-170260301",
+    111: "PRONOTOGRAMMUSMARTINICENSIS-170025101",
+    112: "PSEUDUPENEUSMACULATUS-170220701",
+    113: "PTEROIS-168011900",
+    114: "RACHYCENTRONCANADUM-170100101",
+    115: "RHOMBOPLITESAURORUBENS-170152001",
+    116: "RYPTICUSMACULATUS-170030106",
+    117: "SCARIDAE-170300000",
+    118: "SCARUSVETULA-170301107",
+    119: "SCOMBEROMORUS-170440800",
+    120: "SERIOLA-170113100",
+    121: "SERIOLADUMERILI-170113101",
+    122: "SERIOLAFASCIATA-170113103",
+    123: "SERIOLARIVOLIANA-170113105",
+    124: "SERIOLAZONATA-170113106",
+    125: "SERRANUS-170024200",
+    126: "SERRANUSANNULARIS-170024201",
+    127: "SERRANUSATROBRANCHUS-170024202",
+    128: "SERRANUSPHOEBE-170024208",
+    129: "SPARIDAE-170210000",
+    130: "SPARISOMAAUROFRENATUM-170301201",
+    131: "SPARISOMAVIRIDE-170301206",
+    132: "SPHYRAENABARRACUDA-165030101",
+    133: "SPHYRNALEWINI-108040102",
+    134: "STENOTOMUSCAPRINUS-170213403",
+    135: "SYACIUM-183011000",
+    136: "SYNODONTIDAE-129040000",
+    137: "THALASSOMABIFASCIATUM-170282801",
+    138: "UNKNOWNFISH",
+    139: "UPENEUSPARVUS-170220605",
+    140: "UROPHYCISREGIA-148010105",
+    141: "XANTHICHTHYSRINGENS-189030101"
+}
+
+
+## Initialize VideoWriter
+##video_writer = cv2.VideoWriter("object_counting_vertm_762201405_cam3.avi", cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
+video_writer = cv2.VideoWriter("object_counting_vertmn_762201004_cam3.avi", cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
+
+
+## Initialize Object Counter with line_thickness set to 0
+counter = solutions.ObjectCounter(
+    view_img=True,
+    ##reg_pts=region_points,
+    reg_pts=line_points,
+    classes_names=classes_names,
+    draw_tracks=True,  # Enable tracking lines
+    line_thickness=0,  # Set to 0 to not draw the counting line
+)
+
+#video_writer = cv2.VideoWriter("heatmap_output_762201004_cam3.avi", cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
+
+
+# Init heatmap
+heatmap_obj = solutions.Heatmap(
+    colormap=cv2.COLORMAP_PARULA,
+    view_img=True,
+    shape="circle",
+    classes_names=classes_names,
+)
+
+
+while cap.isOpened():
+    success, im0 = cap.read()
+    if not success:
+        print("Video frame is empty or video processing has been successfully completed.")
+        break
+
+    # Track objects in the frame
+    tracks = model.track(im0, persist=True, show=False, classes=classes_to_count)
+    print('tracks for hash map and counting',tracks)
+
+    ## Perform counting
+    im0 = counter.start_counting(im0, tracks)
+    ## Write the frame to the output video
+    video_writer.write(im0)
+
+    #im0 = heatmap_obj.generate_heatmap(im0, tracks)
+    #video_writer.write(im0)
+
+
+
+# Release video capture and writer objects
+cap.release()
+video_writer.release()
+
+# Close any remaining windows
+cv2.destroyAllWindows()
