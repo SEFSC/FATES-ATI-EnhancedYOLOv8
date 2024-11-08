@@ -1,6 +1,5 @@
 
-#path: ../datasets/GFISHERSD_TEST
-#path: /content/drive/MyDrive/updatedYOLOv8/datasets/GFISHERSD_TEST/
+
 ## provide path to datasets ../datasets/Small_Train_GFISHERD24/
 path: /content/drive/MyDrive/updatedYOLOv8/datasets/Small_Train_GFISHERD24/
 
