@@ -1,9 +1,6 @@
-
-
-## provide path to datasets ../datasets/Small_Train_GFISHERD24/
-#path: /content/drive/MyDrive/updatedYOLOv8/datasets/Small_Train_GFISHERD24/
 ##dataset path, after cloning the github repo and saving in googledrive
 #path: /content/drive/MyDrive/FATES-ATI-EnhancedYOLOv8/datasets/Small_Train_GFISHERD24/
+##dataset path after cloning github repo (code and data) in google cloud
 path: /content/FATES-ATI-EnhancedYOLOv8/datasets/Small_Train_GFISHERD24/
 
 train: images/train/
