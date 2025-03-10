@@ -8,7 +8,7 @@ For demo training purpose, small dataset consisting around 1000 fish images and 
 To train in this small dataset for demo purpose following script can be used:
 python trainYOLOv8_demo.py
 
-Different path can be given, insdide ...dataset_name_.yaml to work with full datasets SEAMAPD21 or GFISHERSD24.
+Different paths can be given, inside ...dataset_name_.yaml to work with full datasets SEAMAPD21 or GFISHERSD24.
 
 
 
